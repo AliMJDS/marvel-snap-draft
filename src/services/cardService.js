@@ -33,7 +33,7 @@ export async function fetchAllCards() {
         entries = Object.entries(data);
       }
       const normalized = entries
-        .filter(([, card]) => card.collectible ?? card.isCollectible ?? true)
+        .filter(([, card]) => card.collectible === true || card.isCollectible === true)
         .map(([key, card]) => normalizeUntappedCard(key, card))
         .filter(c => c.name && c.cost >= 0 && c.cost <= 6);
       if (normalized.length > 0) {
