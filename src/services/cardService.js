@@ -3,13 +3,13 @@ const UNTAPPED_API = 'https://snapjson.untapped.gg/v2/latest/en/cards.json';
 const UNTAPPED_ART_BASE = 'https://snapjson.untapped.gg/art/render/framebreak/common/256/';
 
 function normalizeUntappedCard(key, card) {
-  const cardDefId = card.cardDefId || key || '';
-  const artUrl = cardDefId
-    ? `${UNTAPPED_ART_BASE}${cardDefId}.webp`
-    : '';
+  const name = card.displayName || card.name || key;
+  // cardDefId is the PascalCase slug used in image URLs (e.g. "AntMan", "IronMan")
+  const cardDefId = card.cardDefId || card.defId || card.slug || name.replace(/[\s\-.']/g, '');
+  const artUrl = `${UNTAPPED_ART_BASE}${cardDefId}.webp`;
   return {
     id: cardDefId,
-    name: card.displayName || card.name || key,
+    name,
     cost: card.cost ?? 0,
     power: card.power ?? 0,
     ability: card.description || card.ability || card.text || '',
@@ -32,16 +32,10 @@ export async function fetchAllCards() {
       } else {
         entries = Object.entries(data);
       }
-      // Debug: log first entry to see API structure
-      if (entries.length > 0) {
-        console.log('API first entry key:', entries[0][0]);
-        console.log('API first entry value:', JSON.stringify(entries[0][1], null, 2));
-      }
       const normalized = entries
         .map(([key, card]) => normalizeUntappedCard(key, card))
         .filter(c => c.name && c.cost >= 0 && c.cost <= 6);
       if (normalized.length > 0) {
-        console.log('First normalized card:', JSON.stringify(normalized[0], null, 2));
         cachedCards = normalized;
         return cachedCards;
       }
