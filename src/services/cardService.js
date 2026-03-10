@@ -2,14 +2,14 @@ const UNTAPPED_API = 'https://snapjson.untapped.gg/v2/latest/en/cards.json';
 
 const UNTAPPED_ART_BASE = 'https://snapjson.untapped.gg/art/render/framebreak/common/256/';
 
-function normalizeUntappedCard(card) {
-  const cardDefId = card.cardDefId || card.cid || '';
+function normalizeUntappedCard(key, card) {
+  const cardDefId = card.cardDefId || key || '';
   const artUrl = cardDefId
     ? `${UNTAPPED_ART_BASE}${cardDefId}.webp`
-    : card.variants?.[0]?.art || card.art || card.displayImageUrl || '';
+    : '';
   return {
-    id: cardDefId || card.name,
-    name: card.displayName || card.name,
+    id: cardDefId,
+    name: card.displayName || card.name || key,
     cost: card.cost ?? 0,
     power: card.power ?? 0,
     ability: card.description || card.ability || card.text || '',
@@ -26,8 +26,15 @@ export async function fetchAllCards() {
     const res = await fetch(UNTAPPED_API);
     if (res.ok) {
       const data = await res.json();
-      const cards = Array.isArray(data) ? data : data.results || data.cards || Object.values(data);
-      const normalized = cards.map(normalizeUntappedCard).filter(c => c.name && c.cost >= 0 && c.cost <= 6);
+      let entries;
+      if (Array.isArray(data)) {
+        entries = data.map((card, i) => [card.cardDefId || String(i), card]);
+      } else {
+        entries = Object.entries(data);
+      }
+      const normalized = entries
+        .map(([key, card]) => normalizeUntappedCard(key, card))
+        .filter(c => c.name && c.cost >= 0 && c.cost <= 6);
       if (normalized.length > 0) {
         cachedCards = normalized;
         return cachedCards;
