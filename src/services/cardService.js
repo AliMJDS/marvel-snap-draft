@@ -32,10 +32,16 @@ export async function fetchAllCards() {
       } else {
         entries = Object.entries(data);
       }
+      // Debug: log first entry to see API structure
+      if (entries.length > 0) {
+        console.log('API first entry key:', entries[0][0]);
+        console.log('API first entry value:', JSON.stringify(entries[0][1], null, 2));
+      }
       const normalized = entries
         .map(([key, card]) => normalizeUntappedCard(key, card))
         .filter(c => c.name && c.cost >= 0 && c.cost <= 6);
       if (normalized.length > 0) {
+        console.log('First normalized card:', JSON.stringify(normalized[0], null, 2));
         cachedCards = normalized;
         return cachedCards;
       }
