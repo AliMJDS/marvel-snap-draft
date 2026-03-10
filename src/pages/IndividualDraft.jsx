@@ -86,19 +86,16 @@ export default function IndividualDraft() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[calc(100vh-72px)]">
-        <div className="text-center">
-          <div className="text-4xl mb-4 animate-pulse">🃏</div>
-          <p className="text-gray-400">Loading cards...</p>
-        </div>
+      <div className="flex items-center justify-center min-h-[calc(100vh-56px)]">
+        <p className="text-neutral-500 text-sm animate-pulse">Loading cards...</p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="flex items-center justify-center min-h-[calc(100vh-72px)]">
-        <p className="text-red-400">{error}</p>
+      <div className="flex items-center justify-center min-h-[calc(100vh-56px)]">
+        <p className="text-red-400 text-sm">{error}</p>
       </div>
     );
   }
@@ -107,23 +104,23 @@ export default function IndividualDraft() {
   const currentRound = currentDeck.length + 1;
 
   return (
-    <div className="max-w-7xl mx-auto p-4">
-      <h2 className="text-2xl font-bold text-center mb-2">Individual Draft</h2>
+    <div className="max-w-6xl mx-auto px-4 py-6">
+      <h2 className="text-lg font-semibold text-center mb-1 text-neutral-200">Individual Draft</h2>
       <PlayerIndicator currentPlayer={currentPlayer} />
 
       {isComplete && (
         <div className="text-center py-4">
-          <p className="text-green-400 text-xl font-bold animate-pulse">Draft Complete! Showing results...</p>
+          <p className="text-purple-400 text-sm font-semibold animate-pulse">Draft complete — loading results...</p>
         </div>
       )}
 
       {/* Current choices */}
       {!isComplete && (
-        <div className="mb-8">
-          <h3 className="text-lg font-semibold text-gray-300 mb-2 text-center">
-            Round {currentRound} of {DECK_SIZE} — Pick a card!
-          </h3>
-          <div className="flex justify-center gap-6">
+        <div className="mb-10">
+          <p className="text-xs text-neutral-500 text-center mb-6">
+            Round {currentRound} / {DECK_SIZE} — pick a card
+          </p>
+          <div className="flex justify-center gap-8">
             {choices.map((card, i) => (
               <CardDisplay
                 key={`choice-${i}-${card.id}`}
@@ -137,9 +134,11 @@ export default function IndividualDraft() {
       )}
 
       {/* Decks */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <DeckView deck={player1Deck} playerName="Player 1" maxCards={DECK_SIZE} />
-        <DeckView deck={player2Deck} playerName="Player 2" maxCards={DECK_SIZE} />
+      <div className="border-t border-neutral-800 pt-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <DeckView deck={player1Deck} playerName="Player 1" maxCards={DECK_SIZE} />
+          <DeckView deck={player2Deck} playerName="Player 2" maxCards={DECK_SIZE} />
+        </div>
       </div>
     </div>
   );

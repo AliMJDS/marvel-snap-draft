@@ -4,32 +4,30 @@ export default function DeckView({ deck, playerName, maxCards = 12 }) {
   const sortedDeck = [...deck].sort((a, b) => a.cost - b.cost || a.name.localeCompare(b.name));
 
   return (
-    <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
+    <div>
       <div className="flex justify-between items-center mb-3">
-        <h3 className="text-lg font-bold text-purple-300">{playerName}</h3>
-        <span className="text-sm text-gray-400">{deck.length}/{maxCards} cards</span>
+        <h3 className="text-sm font-semibold text-neutral-300 tracking-wide">{playerName}</h3>
+        <span className="text-xs text-neutral-600">{deck.length}/{maxCards}</span>
       </div>
 
       {/* Progress bar */}
-      <div className="w-full h-2 bg-slate-700 rounded-full mb-3">
+      <div className="w-full h-0.5 bg-neutral-800 mb-4">
         <div
-          className="h-2 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full transition-all duration-500"
+          className="h-0.5 bg-purple-500 transition-all duration-500"
           style={{ width: `${(deck.length / maxCards) * 100}%` }}
         />
       </div>
 
       {/* Cards grid */}
-      <div className="grid grid-cols-4 gap-2">
+      <div className="grid grid-cols-4 sm:grid-cols-6 gap-3">
         {sortedDeck.map((card, i) => (
           <CardDisplay key={`${card.id}-${i}`} card={card} size="small" />
         ))}
         {Array.from({ length: maxCards - deck.length }).map((_, i) => (
           <div
             key={`empty-${i}`}
-            className="w-24 min-h-32 rounded-xl border-2 border-dashed border-slate-600 flex items-center justify-center text-slate-600 text-xs"
-          >
-            ?
-          </div>
+            className="w-[72px] aspect-[3/4] bg-neutral-900/50 border border-dashed border-neutral-800 flex items-center justify-center text-neutral-700 text-xs rounded-sm"
+          />
         ))}
       </div>
     </div>
