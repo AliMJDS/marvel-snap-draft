@@ -1,8 +1,6 @@
 const UNTAPPED_API = 'https://snapjson.untapped.gg/v2/latest/en/cards.json';
-const SNAP_FAN_API = 'https://snap.fan/api/cards/';
 
 function normalizeUntappedCard(card) {
-  // Untapped cards have: cardDefId, displayName, cost, power, description, variants (array with art URLs)
   const artUrl = card.variants?.[0]?.art || card.art || card.displayImageUrl || '';
   return {
     id: card.cardDefId || card.cid || card.name,
@@ -14,23 +12,11 @@ function normalizeUntappedCard(card) {
   };
 }
 
-function normalizeSnapFanCard(card) {
-  return {
-    id: card.id || card.slug || card.name,
-    name: card.name,
-    cost: card.cost ?? card.energy ?? 0,
-    power: card.power ?? 0,
-    ability: card.ability || card.description || card.text || '',
-    image: card.image || card.art || card.imageUrl || '',
-  };
-}
-
 let cachedCards = null;
 
 export async function fetchAllCards() {
   if (cachedCards) return cachedCards;
 
-  // Try untapped.gg API first (most reliable)
   try {
     const res = await fetch(UNTAPPED_API);
     if (res.ok) {
@@ -43,23 +29,9 @@ export async function fetchAllCards() {
       }
     }
   } catch (e) {
-    console.warn('Untapped API failed, trying snap.fan...', e);
+    console.warn('Untapped API failed, using built-in cards...', e);
   }
 
-  // Try snap.fan API
-  try {
-    const res = await fetch(SNAP_FAN_API);
-    if (res.ok) {
-      const data = await res.json();
-      const cards = Array.isArray(data) ? data : data.results || data.cards || Object.values(data);
-      cachedCards = cards.map(normalizeSnapFanCard).filter(c => c.name);
-      if (cachedCards.length > 0) return cachedCards;
-    }
-  } catch (e) {
-    console.warn('snap.fan API failed, using built-in cards...', e);
-  }
-
-  // Built-in fallback data (no external image dependencies)
   cachedCards = getBuiltInCards();
   return cachedCards;
 }
