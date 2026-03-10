@@ -1,5 +1,18 @@
+const UNTAPPED_API = 'https://snapjson.untapped.gg/v2/latest/en/cards.json';
 const SNAP_FAN_API = 'https://snap.fan/api/cards/';
-const FALLBACK_API = 'https://marvel-snap-bgaona.onrender.com/v1/cards/';
+
+function normalizeUntappedCard(card) {
+  // Untapped cards have: cardDefId, displayName, cost, power, description, variants (array with art URLs)
+  const artUrl = card.variants?.[0]?.art || card.art || card.displayImageUrl || '';
+  return {
+    id: card.cardDefId || card.cid || card.name,
+    name: card.displayName || card.name,
+    cost: card.cost ?? 0,
+    power: card.power ?? 0,
+    ability: card.description || card.ability || card.text || '',
+    image: artUrl,
+  };
+}
 
 function normalizeSnapFanCard(card) {
   return {
@@ -12,23 +25,28 @@ function normalizeSnapFanCard(card) {
   };
 }
 
-function normalizeFallbackCard(card) {
-  return {
-    id: card._id || card.cid?.toString() || card.cname,
-    name: card.cname || card.name,
-    cost: card.cost ?? 0,
-    power: card.power ?? 0,
-    ability: card.ability || '',
-    image: card.art || '',
-  };
-}
-
 let cachedCards = null;
 
 export async function fetchAllCards() {
   if (cachedCards) return cachedCards;
 
-  // Try snap.fan API first
+  // Try untapped.gg API first (most reliable)
+  try {
+    const res = await fetch(UNTAPPED_API);
+    if (res.ok) {
+      const data = await res.json();
+      const cards = Array.isArray(data) ? data : data.results || data.cards || Object.values(data);
+      const normalized = cards.map(normalizeUntappedCard).filter(c => c.name && c.cost >= 0 && c.cost <= 6);
+      if (normalized.length > 0) {
+        cachedCards = normalized;
+        return cachedCards;
+      }
+    }
+  } catch (e) {
+    console.warn('Untapped API failed, trying snap.fan...', e);
+  }
+
+  // Try snap.fan API
   try {
     const res = await fetch(SNAP_FAN_API);
     if (res.ok) {
@@ -38,23 +56,10 @@ export async function fetchAllCards() {
       if (cachedCards.length > 0) return cachedCards;
     }
   } catch (e) {
-    console.warn('snap.fan API failed, trying fallback...', e);
+    console.warn('snap.fan API failed, using built-in cards...', e);
   }
 
-  // Try fallback API
-  try {
-    const res = await fetch(FALLBACK_API);
-    if (res.ok) {
-      const data = await res.json();
-      const cards = Array.isArray(data) ? data : data.results || data.cards || Object.values(data);
-      cachedCards = cards.map(normalizeFallbackCard).filter(c => c.name);
-      if (cachedCards.length > 0) return cachedCards;
-    }
-  } catch (e) {
-    console.warn('Fallback API failed, using built-in cards...', e);
-  }
-
-  // Built-in fallback data
+  // Built-in fallback data (no external image dependencies)
   cachedCards = getBuiltInCards();
   return cachedCards;
 }
@@ -128,7 +133,7 @@ function getBuiltInCards() {
     cost: c.cost,
     power: c.power,
     ability: c.ability,
-    image: `https://marvelsnapzone.com/wp-content/themes/flavor/flavor/assets/media/cards/${c.name.toLowerCase().replace(/[\s-]/g, '-').replace(/[^a-z0-9-]/g, '')}.webp?v=21`,
+    image: '',
   }));
 }
 
