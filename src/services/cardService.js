@@ -1,9 +1,14 @@
 const UNTAPPED_API = 'https://snapjson.untapped.gg/v2/latest/en/cards.json';
 
+const UNTAPPED_ART_BASE = 'https://snapjson.untapped.gg/art/render/framebreak/common/256/';
+
 function normalizeUntappedCard(card) {
-  const artUrl = card.variants?.[0]?.art || card.art || card.displayImageUrl || '';
+  const cardDefId = card.cardDefId || card.cid || '';
+  const artUrl = cardDefId
+    ? `${UNTAPPED_ART_BASE}${cardDefId}.webp`
+    : card.variants?.[0]?.art || card.art || card.displayImageUrl || '';
   return {
-    id: card.cardDefId || card.cid || card.name,
+    id: cardDefId || card.name,
     name: card.displayName || card.name,
     cost: card.cost ?? 0,
     power: card.power ?? 0,
@@ -105,7 +110,7 @@ function getBuiltInCards() {
     cost: c.cost,
     power: c.power,
     ability: c.ability,
-    image: '',
+    image: `${UNTAPPED_ART_BASE}${c.name.replace(/[\s-]/g, '')}.webp`,
   }));
 }
 
