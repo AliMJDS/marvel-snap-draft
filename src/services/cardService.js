@@ -14,6 +14,7 @@ function normalizeUntappedCard(key, card) {
     power: card.power ?? 0,
     ability: card.description || card.ability || card.text || '',
     image: artUrl,
+    collectible: card.collectible ?? card.isCollectible ?? true,
   };
 }
 
@@ -34,7 +35,7 @@ export async function fetchAllCards() {
       }
       const normalized = entries
         .map(([key, card]) => normalizeUntappedCard(key, card))
-        .filter(c => c.name && c.cost >= 0 && c.cost <= 6);
+        .filter(c => c.name && c.cost >= 0 && c.cost <= 6 && c.collectible);
       if (normalized.length > 0) {
         cachedCards = normalized;
         return cachedCards;
