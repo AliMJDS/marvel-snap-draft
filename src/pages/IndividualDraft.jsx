@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { fetchAllCards, generateDraftChoices } from '../services/cardService';
 import CardDisplay from '../components/CardDisplay';
 import DeckView from '../components/DeckView';
-import PlayerIndicator from '../components/PlayerIndicator';
 
 const DECK_SIZE = 12;
 const CHOICES_COUNT = 3;
@@ -13,9 +12,7 @@ export default function IndividualDraft() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [allCards, setAllCards] = useState([]);
-  const [player1Deck, setPlayer1Deck] = useState([]);
-  const [player2Deck, setPlayer2Deck] = useState([]);
-  const [currentPlayer, setCurrentPlayer] = useState(1);
+  const [deck, setDeck] = useState([]);
   const [choices, setChoices] = useState([]);
   const [picking, setPicking] = useState(false);
 
@@ -38,47 +35,28 @@ export default function IndividualDraft() {
     init();
   }, [generateNewChoices]);
 
-  const isComplete = player1Deck.length >= DECK_SIZE && player2Deck.length >= DECK_SIZE;
+  const isComplete = deck.length >= DECK_SIZE;
 
   useEffect(() => {
     if (isComplete) {
       const timer = setTimeout(() => {
         navigate('/results', {
-          state: { player1Deck, player2Deck, mode: 'Individual Draft' }
+          state: { deck, mode: 'Individual Draft' }
         });
       }, 1000);
       return () => clearTimeout(timer);
     }
-  }, [isComplete, player1Deck, player2Deck, navigate]);
+  }, [isComplete, deck, navigate]);
 
   function handleCardPick(card) {
     if (picking || isComplete) return;
     setPicking(true);
 
-    if (currentPlayer === 1) {
-      const newDeck = [...player1Deck, card];
-      setPlayer1Deck(newDeck);
+    const newDeck = [...deck, card];
+    setDeck(newDeck);
 
-      if (player2Deck.length < DECK_SIZE) {
-        setCurrentPlayer(2);
-        generateNewChoices(allCards);
-      } else if (newDeck.length >= DECK_SIZE) {
-        // Both done
-      } else {
-        generateNewChoices(allCards);
-      }
-    } else {
-      const newDeck = [...player2Deck, card];
-      setPlayer2Deck(newDeck);
-
-      if (player1Deck.length < DECK_SIZE) {
-        setCurrentPlayer(1);
-        generateNewChoices(allCards);
-      } else if (newDeck.length >= DECK_SIZE) {
-        // Both done
-      } else {
-        generateNewChoices(allCards);
-      }
+    if (newDeck.length < DECK_SIZE) {
+      generateNewChoices(allCards);
     }
 
     setTimeout(() => setPicking(false), 300);
@@ -100,13 +78,12 @@ export default function IndividualDraft() {
     );
   }
 
-  const currentDeck = currentPlayer === 1 ? player1Deck : player2Deck;
-  const currentRound = currentDeck.length + 1;
+  const currentRound = deck.length + 1;
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-6">
       <h2 className="text-lg font-semibold text-center mb-1 text-neutral-200">Individual Draft</h2>
-      <PlayerIndicator currentPlayer={currentPlayer} />
+      <p className="text-center text-neutral-500 text-xs mb-6">Build your deck — your opponent drafts on their own device</p>
 
       {isComplete && (
         <div className="text-center py-4">
@@ -142,12 +119,9 @@ export default function IndividualDraft() {
         </div>
       )}
 
-      {/* Decks */}
+      {/* Deck */}
       <div className="border-t border-neutral-800 pt-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <DeckView deck={player1Deck} playerName="Player 1" maxCards={DECK_SIZE} />
-          <DeckView deck={player2Deck} playerName="Player 2" maxCards={DECK_SIZE} />
-        </div>
+        <DeckView deck={deck} playerName="Your Deck" maxCards={DECK_SIZE} />
       </div>
     </div>
   );

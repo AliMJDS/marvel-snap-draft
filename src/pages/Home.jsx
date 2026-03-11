@@ -31,9 +31,10 @@ export default function Home() {
         >
           <h2 className="text-base font-semibold text-neutral-200 mb-2">Individual Draft</h2>
           <p className="text-neutral-500 text-xs mb-4 leading-relaxed">
-            Each player picks 1 of 3 random cards per round. Build your deck your way.
+            Draft solo on your own device. Pick 1 of 3 random cards each round to build your deck.
           </p>
           <div className="flex gap-2">
+            <span className="px-2 py-0.5 border border-neutral-700 text-neutral-400 text-[10px]">Solo draft</span>
             <span className="px-2 py-0.5 border border-neutral-700 text-neutral-400 text-[10px]">Pick 1 of 3</span>
             <span className="px-2 py-0.5 border border-neutral-700 text-neutral-400 text-[10px]">12 rounds</span>
           </div>
