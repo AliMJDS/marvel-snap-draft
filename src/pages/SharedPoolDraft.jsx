@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { fetchAllCards, generateSharedPool } from '../services/cardService';
+import { fetchAllCards, generateSharedPool, generateDraftChoices } from '../services/cardService';
 import CardDisplay from '../components/CardDisplay';
 import DeckView from '../components/DeckView';
 import PlayerIndicator from '../components/PlayerIndicator';
@@ -12,16 +12,20 @@ export default function SharedPoolDraft() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [allCards, setAllCards] = useState([]);
   const [pool, setPool] = useState([]);
   const [takenIds, setTakenIds] = useState(new Set());
   const [player1Deck, setPlayer1Deck] = useState([]);
   const [player2Deck, setPlayer2Deck] = useState([]);
   const [currentPlayer, setCurrentPlayer] = useState(1);
+  // Track which players have flagged each card as "don't have" — key: poolId, value: Set of player numbers
+  const [dontHaveFlags, setDontHaveFlags] = useState({});
 
   useEffect(() => {
     async function init() {
       try {
         const cards = await fetchAllCards();
+        setAllCards(cards);
         const sharedPool = generateSharedPool(cards, POOL_SIZE);
         setPool(sharedPool);
       } catch (e) {
@@ -66,6 +70,27 @@ export default function SharedPoolDraft() {
     }
   }
 
+  function handleDontHave(card) {
+    if (takenIds.has(card.poolId) || isComplete) return;
+
+    const flags = { ...dontHaveFlags };
+    const cardFlags = new Set(flags[card.poolId] || []);
+    cardFlags.add(currentPlayer);
+
+    if (cardFlags.size >= 2) {
+      // Both players flagged — replace the card with a new one
+      const [replacement] = generateDraftChoices(allCards, 1);
+      const newPoolId = `${replacement.id}-pool-${Date.now()}`;
+      setPool(prev => prev.map(c =>
+        c.poolId === card.poolId ? { ...replacement, poolId: newPoolId } : c
+      ));
+      delete flags[card.poolId];
+    } else {
+      flags[card.poolId] = cardFlags;
+    }
+    setDontHaveFlags(flags);
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[calc(100vh-56px)]">
@@ -100,15 +125,36 @@ export default function SharedPoolDraft() {
           <span className="text-xs text-neutral-600">{pool.length - takenIds.size} remaining</span>
         </div>
         <div className="grid grid-cols-5 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-3">
-          {pool.map(card => (
-            <CardDisplay
-              key={card.poolId}
-              card={card}
-              onClick={handleCardPick}
-              disabled={takenIds.has(card.poolId) || isComplete}
-              size="small"
-            />
-          ))}
+          {pool.map(card => {
+            const taken = takenIds.has(card.poolId);
+            const flagSet = dontHaveFlags[card.poolId];
+            const flaggedBy = flagSet ? [...flagSet] : [];
+            return (
+              <div key={card.poolId} className="flex flex-col items-center">
+                <CardDisplay
+                  card={card}
+                  onClick={handleCardPick}
+                  disabled={taken || isComplete}
+                  size="small"
+                />
+                {!taken && !isComplete && (
+                  flaggedBy.length > 0 ? (
+                    <span className="mt-1 text-[8px] text-amber-400 text-center leading-tight">
+                      P{flaggedBy[0]} flagged
+                    </span>
+                  ) : null
+                )}
+                {!taken && !isComplete && (
+                  <button
+                    onClick={() => handleDontHave(card)}
+                    className="mt-0.5 text-[8px] text-neutral-500 hover:text-red-400 transition"
+                  >
+                    Don&apos;t have
+                  </button>
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
 
