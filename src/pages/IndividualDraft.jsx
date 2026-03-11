@@ -130,6 +130,15 @@ export default function IndividualDraft() {
               />
             ))}
           </div>
+          <div className="flex justify-center mt-4">
+            <button
+              onClick={() => generateNewChoices(allCards)}
+              disabled={picking}
+              className="px-4 py-2 text-xs text-neutral-400 border border-neutral-700 rounded hover:bg-neutral-800 hover:text-neutral-200 transition disabled:opacity-30 disabled:cursor-not-allowed"
+            >
+              I don&apos;t have these cards — reroll
+            </button>
+          </div>
         </div>
       )}
 
