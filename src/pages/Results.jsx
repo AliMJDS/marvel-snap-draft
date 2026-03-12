@@ -1,5 +1,41 @@
+import { useState } from 'react';
 import { useLocation, Link } from 'react-router-dom';
 import DeckView from '../components/DeckView';
+import { generateDeckCode } from '../services/cardService';
+
+function CopyDeckButton({ deck }) {
+  const [copied, setCopied] = useState(false);
+
+  async function handleCopy() {
+    const code = generateDeckCode(deck);
+    try {
+      await navigator.clipboard.writeText(code);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Fallback for browsers that don't support clipboard API
+      const textarea = document.createElement('textarea');
+      textarea.value = code;
+      textarea.style.position = 'fixed';
+      textarea.style.opacity = '0';
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textarea);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  }
+
+  return (
+    <button
+      onClick={handleCopy}
+      className="px-4 py-1.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 text-xs font-medium transition-colors border border-neutral-700"
+    >
+      {copied ? 'Copied!' : 'Copy Deck Code'}
+    </button>
+  );
+}
 
 export default function Results() {
   const location = useLocation();
@@ -58,11 +94,24 @@ export default function Results() {
       {isSinglePlayer ? (
         <div className="max-w-md mx-auto mb-10">
           <DeckView deck={player1Deck} playerName="Your Deck" />
+          <div className="flex justify-center mt-4">
+            <CopyDeckButton deck={player1Deck} />
+          </div>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
-          <DeckView deck={player1Deck} playerName="Player 1" />
-          <DeckView deck={player2Deck} playerName="Player 2" />
+          <div>
+            <DeckView deck={player1Deck} playerName="Player 1" />
+            <div className="flex justify-center mt-4">
+              <CopyDeckButton deck={player1Deck} />
+            </div>
+          </div>
+          <div>
+            <DeckView deck={player2Deck} playerName="Player 2" />
+            <div className="flex justify-center mt-4">
+              <CopyDeckButton deck={player2Deck} />
+            </div>
+          </div>
         </div>
       )}
 

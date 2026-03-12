@@ -165,3 +165,17 @@ export function generateDraftChoices(allCards, count = 3) {
   const shuffled = shuffleArray(allCards);
   return shuffled.slice(0, count);
 }
+
+export function generateDeckCode(deck) {
+  const sorted = [...deck].sort((a, b) => a.cost - b.cost || a.name.localeCompare(b.name));
+  const lines = sorted.map(card => `# (${card.cost}) ${card.name}`);
+  const idList = sorted.map(card => card.id).join(',');
+  const encoded = btoa(idList);
+  return [
+    ...lines,
+    '#',
+    encoded,
+    '#',
+    '# To use this deck, copy it to your clipboard and paste it from the deck editing menu in MARVEL SNAP.',
+  ].join('\n');
+}
