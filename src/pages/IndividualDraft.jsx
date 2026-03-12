@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { fetchAllCards, generateDraftChoices } from '../services/cardService';
 import CardDisplay from '../components/CardDisplay';
 import DeckView from '../components/DeckView';
-import PlayerIndicator from '../components/PlayerIndicator';
 
 const DECK_SIZE = 12;
 const CHOICES_COUNT = 3;
@@ -13,9 +12,7 @@ export default function IndividualDraft() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [allCards, setAllCards] = useState([]);
-  const [player1Deck, setPlayer1Deck] = useState([]);
-  const [player2Deck, setPlayer2Deck] = useState([]);
-  const [currentPlayer, setCurrentPlayer] = useState(1);
+  const [deck, setDeck] = useState([]);
   const [choices, setChoices] = useState([]);
   const [picking, setPicking] = useState(false);
 
@@ -38,50 +35,37 @@ export default function IndividualDraft() {
     init();
   }, [generateNewChoices]);
 
-  const isComplete = player1Deck.length >= DECK_SIZE && player2Deck.length >= DECK_SIZE;
+  const isComplete = deck.length >= DECK_SIZE;
 
   useEffect(() => {
     if (isComplete) {
       const timer = setTimeout(() => {
         navigate('/results', {
-          state: { player1Deck, player2Deck, mode: 'Individual Draft' }
+          state: { player1Deck: deck, mode: 'Individual Draft' }
         });
       }, 1000);
       return () => clearTimeout(timer);
     }
-  }, [isComplete, player1Deck, player2Deck, navigate]);
+  }, [isComplete, deck, navigate]);
 
   function handleCardPick(card) {
     if (picking || isComplete) return;
     setPicking(true);
 
-    if (currentPlayer === 1) {
-      const newDeck = [...player1Deck, card];
-      setPlayer1Deck(newDeck);
-
-      if (player2Deck.length < DECK_SIZE) {
-        setCurrentPlayer(2);
-        generateNewChoices(allCards);
-      } else if (newDeck.length >= DECK_SIZE) {
-        // Both done
-      } else {
-        generateNewChoices(allCards);
-      }
-    } else {
-      const newDeck = [...player2Deck, card];
-      setPlayer2Deck(newDeck);
-
-      if (player1Deck.length < DECK_SIZE) {
-        setCurrentPlayer(1);
-        generateNewChoices(allCards);
-      } else if (newDeck.length >= DECK_SIZE) {
-        // Both done
-      } else {
-        generateNewChoices(allCards);
-      }
-    }
+    setDeck(prev => [...prev, card]);
+    generateNewChoices(allCards);
 
     setTimeout(() => setPicking(false), 300);
+  }
+
+  function handleRerollCard(index) {
+    if (picking) return;
+    setChoices(prev => {
+      const updated = [...prev];
+      const [newCard] = generateDraftChoices(allCards, 1);
+      updated[index] = newCard;
+      return updated;
+    });
   }
 
   if (loading) {
@@ -100,13 +84,11 @@ export default function IndividualDraft() {
     );
   }
 
-  const currentDeck = currentPlayer === 1 ? player1Deck : player2Deck;
-  const currentRound = currentDeck.length + 1;
+  const currentRound = deck.length + 1;
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-6">
-      <h2 className="text-lg font-semibold text-center mb-1 text-neutral-200">Individual Draft</h2>
-      <PlayerIndicator currentPlayer={currentPlayer} />
+      <h2 className="text-lg font-semibold text-center mb-6 text-neutral-200">Individual Draft</h2>
 
       {isComplete && (
         <div className="text-center py-4">
@@ -122,32 +104,28 @@ export default function IndividualDraft() {
           </p>
           <div className="flex justify-center gap-8">
             {choices.map((card, i) => (
-              <CardDisplay
-                key={`choice-${i}-${card.id}`}
-                card={card}
-                onClick={handleCardPick}
-                disabled={picking}
-              />
+              <div key={`choice-${i}-${card.id}`} className="flex flex-col items-center gap-2">
+                <CardDisplay
+                  card={card}
+                  onClick={handleCardPick}
+                  disabled={picking}
+                />
+                <button
+                  onClick={() => handleRerollCard(i)}
+                  disabled={picking}
+                  className="px-3 py-1 text-[10px] text-neutral-500 border border-neutral-700 rounded hover:bg-neutral-800 hover:text-neutral-300 transition disabled:opacity-30 disabled:cursor-not-allowed"
+                >
+                  Reroll
+                </button>
+              </div>
             ))}
-          </div>
-          <div className="flex justify-center mt-4">
-            <button
-              onClick={() => generateNewChoices(allCards)}
-              disabled={picking}
-              className="px-4 py-2 text-xs text-neutral-400 border border-neutral-700 rounded hover:bg-neutral-800 hover:text-neutral-200 transition disabled:opacity-30 disabled:cursor-not-allowed"
-            >
-              I don&apos;t have these cards — reroll
-            </button>
           </div>
         </div>
       )}
 
-      {/* Decks */}
-      <div className="border-t border-neutral-800 pt-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <DeckView deck={player1Deck} playerName="Player 1" maxCards={DECK_SIZE} />
-          <DeckView deck={player2Deck} playerName="Player 2" maxCards={DECK_SIZE} />
-        </div>
+      {/* Deck */}
+      <div className="border-t border-neutral-800 pt-6 max-w-md mx-auto">
+        <DeckView deck={deck} playerName="Your Deck" maxCards={DECK_SIZE} />
       </div>
     </div>
   );
